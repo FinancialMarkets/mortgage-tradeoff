@@ -1,0 +1,26 @@
+---
+title: "Mortgage Tradeoff"
+output: html_document
+runtime: shiny
+---
+
+
+This is a text
+
+```{r echo=FALSE, warning=FALSE}
+inputPanel(
+    sliderInput("rate", "Monthly Interest Rate", min = 0, max = .3,
+                value = .03, step = .01, animate = TRUE),
+    sliderInput("loan", "Loan Amount", min = 0, max = 500000,
+                value = 200000, step = 20000, animate = TRUE)
+)
+
+renderPlot({
+    yearRange <- 1:50
+    pmt <- ( input$loan * ( input$rate / 12 )) / ( 1 - 1 / ( 1 + input$rate / 12)^(yearRange * 12) )
+    totPmt <- pmt * 12 * yearRange
+    plot(log(pmt/totPmt))
+})
+```
+
+
