@@ -8,7 +8,7 @@ runtime: shiny
 
 ```{r echo=FALSE, warning=FALSE, message = FALSE}
 inputPanel(
-    sliderInput("rate", "Annual Interest Rate", min = 0, max = .3,
+    sliderInput("rate", "Annual Interest Rate", min = 0.01, max = .3,
                 value = .03, step = .01, animate = TRUE),
     sliderInput("years", "Mortgage Term (Years)", min = 15, max = 50,
                 value = 30, step = 1, animate = TRUE),
@@ -18,16 +18,43 @@ inputPanel(
 library(plotly)
 renderPlotly({
     monthRange <- 1:(input$years*12)
+    ## Monthly mortgage payment
     pmt <- ( input$loan * ( input$rate / 12 )) / ( 1 - 1 / ( 1 + input$rate / 12) ^ (max(monthRange)) )
+    ## Sequence of all cash flows
+    CFs <- rep(pmt, length(monthRange))
+    PVCFs <- CFs / ( (1 + (input$rate / 12))^{monthRange} )
+
+    ## metrics
     totPmt <- pmt * max(monthRange)
+
+    ## single payment graphics
     ratioTot <- pmt / totPmt * 100
     ratioLoan <- pmt / input$loan * 100
     Ratios_in_Percent <- c(ratioTot, ratioLoan)
+
+    ## time series graphics -- but this will be flat so doesn't make much sense to plot as ts
+    ratioCFTot <- (CFs / totPmt) * 100
+    ratioCFLoan <- (CFs / input$loan) * 100
+    ratioPVCFTot <- (PVCFs / totPmt) * 100
+    ratioPVCFLoan <- (PVCFs / input$loan) * 100
+
+    data2plot <- data.frame(cbind(monthRange, ratioPVCFLoan))
+    names(data2plot) <- c("Month", "PV_Payments_to_Loan")
+    ## p <- plot_ly(
+    ##     x = c("Monthly Payment Divided by Total Payment", "Monthly Payment Divided by Loan Amount"),
+    ##     y = Ratios_in_Percent,
+    ##     xaxis = "",
+    ##     type = "bar"
+    ## )
     p <- plot_ly(
-        x = c("Monthly Payment Divided by Total Payment", "Monthly Payment Divided by Loan Amount"),
-        y = Ratios_in_Percent,
-        xaxis = "",
-        type = "bar"
+        ## x = monthRange,
+        ## y = ratioPVCFLoan,
+        data = data2plot,
+        x = ~Month,
+        y = ~PV_Payments_to_Loan,
+        xaxis = "Month",
+        type = "bar",
+        text = paste0("Month ", monthRange, ", Payment as % of Loan: ", round(ratioPVCFLoan, 5))
     )
     p
 })
@@ -35,3 +62,6 @@ renderPlotly({
 
 
  
+
+
+
