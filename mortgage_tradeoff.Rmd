@@ -17,26 +17,44 @@ inputPanel(
 )
 library(plotly)
 renderPlotly({
-    monthRange <- 1:(input$years*12)
+
+    ## use Girke's mortgage amortization from here
+    source("http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/mortgage.R")
+    ## Author: Thomas Girke
+    ## Function definition from site:
+# Definitions: 
+#	  P = principal, the initial amount of the loan
+#	  I = annual interest rate
+#	  L = length of the loan in years, or at least the length over which the loan is amortized.
+#	  J = monthly interest in decimal form = I / (12 x 100)
+#	  M = monthly payment; formula: M = P * ( J / (1 - (1 + J) ^ -N))
+#	  N = number of months over which loan is amortized = L x 12
+# see also: http://www.jeacle.ie/mortgage/instructions.html
+
+    mortgage(P = input$loan, I = input$rate, L = input$years, amort=T, plotData=F)
+
+### old calculations -----
+    #{{{
+    ## monthRange <- 1:(input$years*12)
     ## Monthly mortgage payment
-    pmt <- ( input$loan * ( input$rate / 12 )) / ( 1 - 1 / ( 1 + input$rate / 12) ^ (max(monthRange)) )
+    ## pmt <- ( input$loan * ( input$rate / 12 )) / ( 1 - 1 / ( 1 + input$rate / 12) ^ (max(monthRange)) )
     ## Sequence of all cash flows
-    CFs <- rep(pmt, length(monthRange))
-    PVCFs <- CFs / ( (1 + (input$rate / 12))^{monthRange} )
+    ## CFs <- rep(pmt, length(monthRange))
+    ## PVCFs <- CFs / ( (1 + (input$rate / 12))^{monthRange} )
 
     ## metrics
-    totPmt <- pmt * max(monthRange)
+    ## totPmt <- pmt * max(monthRange)
 
     ## single payment graphics
-    ratioTot <- pmt / totPmt * 100
-    ratioLoan <- pmt / input$loan * 100
-    Ratios_in_Percent <- c(ratioTot, ratioLoan)
+    ## ratioTot <- pmt / totPmt * 100
+    ## ratioLoan <- pmt / input$loan * 100
+    ## Ratios_in_Percent <- c(ratioTot, ratioLoan)
 
     ## time series graphics -- but this will be flat so doesn't make much sense to plot as ts
-    ratioCFTot <- (CFs / totPmt) * 100
-    ratioCFLoan <- (CFs / input$loan) * 100
-    ratioPVCFTot <- (PVCFs / totPmt) * 100
-    ratioPVCFLoan <- (PVCFs / input$loan) * 100
+    ## ratioCFTot <- (CFs / totPmt) * 100
+    ## ratioCFLoan <- (CFs / input$loan) * 100
+    ## ratioPVCFTot <- (PVCFs / totPmt) * 100
+    ## ratioPVCFLoan <- (PVCFs / input$loan) * 100
 
     data2plot <- data.frame(cbind(monthRange, ratioPVCFLoan))
     names(data2plot) <- c("Month", "PV_Payments_to_Loan")
