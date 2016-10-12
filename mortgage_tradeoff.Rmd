@@ -8,8 +8,8 @@ runtime: shiny
 
 ```{r echo=FALSE, warning=FALSE, message = FALSE}
 inputPanel(
-    sliderInput("rate", "Annual Interest Rate", min = 0.01, max = .3,
-                value = .03, step = .01, animate = TRUE),
+    sliderInput("rate", "Annual Interest Rate (in %)", min = 1, max = 30,
+                value = 5, step = .5, animate = TRUE),
     sliderInput("years", "Mortgage Term (Years)", min = 15, max = 50,
                 value = 30, step = 1, animate = TRUE),
     sliderInput("loan", "Loan Amount", min = 0, max = 500000,
@@ -32,6 +32,58 @@ renderPlotly({
 # see also: http://www.jeacle.ie/mortgage/instructions.html
 
     mortgage(P = input$loan, I = input$rate, L = input$years, amort=T, plotData=F)
+
+    cumPrin <- cumsum(aDFmonth$Monthly_Principal)
+    percentHomeOwned <- cumPrin / input$loan
+
+    monthlyInt <- aDFmonth$Monthly_Interest
+    cumInt <- cumsum(aDFmonth$Monthly_Interest)
+    
+    months <- 1:(12 * input$years)
+
+    data2plot <- data.frame(cbind(months, cumPrin, percentHomeOwned, monthlyInt, cumInt))
+    names(data2plot) <- c("Months", "Cumulative_Principal", "Percent_of_Home_Owned", "Monthly_Interest",  "Cumulative_Interest")
+    
+    ## Also calculate each for 15 andd 30 year mortgages and add them to plot ----
+
+    ## 15 year
+    
+    mortgage(P = input$loan, I = input$rate, L = 30, amort=T, plotData=F)
+
+    cumPrin.15 <- cumsum(aDFmonth$Monthly_Principal)
+    percentHomeOwned.15 <- cumPrin / input$loan
+
+    monthlyInt.15 <- aDFmonth$Monthly_Interest
+    cumInt.15 <- cumsum(aDFmonth$Monthly_Interest)
+    
+    months.15 <- 1:(12 * 30)
+
+    data2plot.15 <- data.frame(cbind(months.15, cumPrin.15, percentHomeOwned.15, monthlyInt.15, cumInt.15))
+    names(data2plot.15) <- c("Months_15_Yr", "Cumulative_Principal_15_Yr", "Percent_of_Home_Owned_15_Yr", "Monthly_Interest_15_Yr",  "Cumulative_Interest_15_Yr")
+
+
+    ## 30 year
+    
+    mortgage(P = input$loan, I = input$rate, L = 30, amort=T, plotData=F)
+
+    cumPrin.30 <- cumsum(aDFmonth$Monthly_Principal)
+    percentHomeOwned.30 <- cumPrin / input$loan
+
+    monthlyInt.30 <- aDFmonth$Monthly_Interest
+    cumInt.30 <- cumsum(aDFmonth$Monthly_Interest)
+    
+    months.30 <- 1:(12 * 30)
+
+    data2plot.30 <- data.frame(cbind(months.30, cumPrin.30, percentHomeOwned.30, monthlyInt.30, cumInt.30))
+    names(data2plot.30) <- c("Months_30_Yr", "Cumulative_Principal_30_Yr", "Percent_of_Home_Owned_30_Yr", "Monthly_Interest_30_Yr",  "Cumulative_Interest_30_Yr")
+
+    ## plot each metric with 15 and 30 year
+    months <- 1:(12 * max(30, input$years))
+    ## have to do an *outer* type merge here
+    data.cumPrin <- data.frame(cbind(months, data2plot$Cumulative_Principal, data2plot.15$Cumulative_Principal_15_Yr, data2plot.30$Cumulative_Principal_30_Yr))
+    names(data.cumPrin) <- c("Months", "Cumulative_Principal", "Cumulative_Principal_15_Yr", "Cumulative_Principal_30_Yr")
+
+    
 
 ### old calculations -----
     #{{{
@@ -56,8 +108,7 @@ renderPlotly({
     ## ratioPVCFTot <- (PVCFs / totPmt) * 100
     ## ratioPVCFLoan <- (PVCFs / input$loan) * 100
 
-    data2plot <- data.frame(cbind(monthRange, ratioPVCFLoan))
-    names(data2plot) <- c("Month", "PV_Payments_to_Loan")
+    
     ## p <- plot_ly(
     ##     x = c("Monthly Payment Divided by Total Payment", "Monthly Payment Divided by Loan Amount"),
     ##     y = Ratios_in_Percent,
@@ -67,13 +118,16 @@ renderPlotly({
     p <- plot_ly(
         ## x = monthRange,
         ## y = ratioPVCFLoan,
-        data = data2plot,
-        x = ~Month,
-        y = ~PV_Payments_to_Loan,
+        data = data.cumPrin,
+        x = ~Months,
+        y = ~Cumulative_Principal,
         xaxis = "Month",
-        type = "bar",
-        text = paste0("Month ", monthRange, ", Payment as % of Loan: ", round(ratioPVCFLoan, 5))
-    )
+        type = "scatter",
+        mode = "lines",
+        text = paste0("Month ", months, ", Payment as % of Loan: ", round(data2plot$Cumulative_Principal, 5))
+    ) %>%
+    add_trace(y = ~Cumulative_Principal_30_Yr) %>%
+    add_trace(y = ~Cumulative_Principal_15_Yr)
     p
 })
 ```
