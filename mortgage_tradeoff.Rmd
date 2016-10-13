@@ -4,8 +4,6 @@ output: html_document
 runtime: shiny
 ---
 
-### Analysis of the mortgage borrower's tradeoff between longer term and lower monthly (but higher total) payments.  
-
 ```{r echo=FALSE, warning=FALSE, message = FALSE}
 inputPanel(
     sliderInput("rate", "Annual Interest Rate (%)", min = 1, max = 30,
@@ -22,6 +20,7 @@ renderPlotly({
     ## use Girke's mortgage amortization from here
     ## source("http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/mortgage.R")
     ## Author: Thomas Girke
+    #{{{
     ## Function definition from site:
 ### begin Girke Code -------
     mortgage <- function(P=500000, I=6, L=30, amort=T, plotData=T) { 
@@ -79,7 +78,9 @@ renderPlotly({
 #	  J = monthly interest in decimal form = I / (12 x 100)
 #	  M = monthly payment; formula: M = P * ( J / (1 - (1 + J) ^ -N))
 #	  N = number of months over which loan is amortized = L x 12
-# see also: http://www.jeacle.ie/mortgage/instructions.html
+    ## see also: http://www.jeacle.ie/mortgage/instructions.html
+    #}}}
+
 ### end Girke Code -------
     
     mortgage(P = input$loan, I = input$rate, L = input$years, amort=T, plotData=F)
@@ -96,7 +97,7 @@ renderPlotly({
     data2plot <- data.frame(cbind(months, cumPrin, percentHomeOwned, monthlyInt, cumInt))
     names(data2plot) <- c("Months", "Cumulative_Principal", "Percent_of_Home_Owned", "Monthly_Interest",  "Cumulative_Interest")
     
-    ## Also calculate each for 15 andd 30 year mortgages and add them to plot ----
+    ## Also calculate each for 15 and 30 year mortgages and add them to plot ----
 
     ## 15 year
     
@@ -145,16 +146,13 @@ renderPlotly({
         xaxis = "Month",
         type = "scatter",
         mode = "lines",
+	name = paste0("Cumulative Principal, ", input$years, " Yr"), 
         text = paste0("Cumulative Principal: Month ", months)
     ) %>%
-    add_trace(y = ~Cumulative_Principal_30_Yr) %>%
-    add_trace(y = ~Cumulative_Principal_15_Yr)
+    add_trace(y = ~Cumulative_Principal_30_Yr, name = "Cumulative Principal, 30 Yr") %>%
+    add_trace(y = ~Cumulative_Principal_15_Yr, name = "Cumulative Principal, 15 Yr")
     p
 })
 ```
-
-
- 
-
 
 
